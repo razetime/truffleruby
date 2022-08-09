@@ -9,18 +9,10 @@
  */
 package org.truffleruby.parser;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-
 import com.oracle.truffle.api.TruffleSafepoint;
 import com.oracle.truffle.api.strings.InternalByteArray;
 import com.oracle.truffle.api.strings.TruffleString;
+
 import org.jcodings.Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
@@ -29,7 +21,6 @@ import org.truffleruby.RubyContext;
 import org.truffleruby.RubyLanguage;
 import org.truffleruby.builtins.PrimitiveNodeConstructor;
 import org.truffleruby.core.CoreLibrary;
-import org.truffleruby.core.DummyNode;
 import org.truffleruby.core.IsNilNode;
 import org.truffleruby.core.array.ArrayAppendOneNodeGen;
 import org.truffleruby.core.array.ArrayConcatNode;
@@ -280,7 +271,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
 /** A JRuby parser node visitor which translates JRuby AST nodes into truffle Nodes. */
-public class BodyTranslator extends Translator {
+public class BodyTranslator extends BaseTranslator {
 
     public static final ToSNode[] EMPTY_TO_S_NODE_ARRAY = new ToSNode[0];
     public static final RescueNode[] EMPTY_RESCUE_NODE_ARRAY = new RescueNode[0];
@@ -302,14 +293,10 @@ public class BodyTranslator extends Translator {
             ParserContext parserContext,
             Node currentNode,
             RubyDeferredWarnings rubyWarnings) {
-        super(language, source, parserContext, currentNode);
+        super(language, source, parserContext, currentNode, environment);
         this.parent = parent;
         this.environment = environment;
         this.rubyWarnings = rubyWarnings;
-    }
-
-    private static RubyNode[] createArray(int size) {
-        return size == 0 ? RubyNode.EMPTY_ARRAY : new RubyNode[size];
     }
 
     private RubyNode translateNameNodeToSymbol(ParseNode node) {
@@ -858,13 +845,13 @@ public class BodyTranslator extends Translator {
         RubyNode elseNode = translateNodeOrNil(sourceSection, node.getElseNode());
 
         PatternMatchingTranslator tr = new PatternMatchingTranslator(language, source, parserContext,
-                currentNode, node.getCaseNode(), node.getCases(), environment);
+                currentNode, node.getCaseNode(), node.getCases(), environment, this);
 
         final RubyNode ret;
 
         // Evaluate the case expression and store it in a local
 
-        final int tempSlot = environment.declareLocalTemp("case");
+        final int tempSlot = environment.declareLocalTemp("case in value");
         final ReadLocalNode readTemp = environment.readNode(tempSlot, sourceSection);
         final RubyNode assignTemp = readTemp.makeWriteNode(node.getCaseNode().accept(this));
 
@@ -3179,26 +3166,6 @@ public class BodyTranslator extends Translator {
         if (from.isNewline()) {
             to.setNewline();
         }
-    }
-
-    private RubyNode addNewlineIfNeeded(ParseNode jrubyNode, RubyNode node) {
-        if (jrubyNode.isNewline()) {
-            TruffleSafepoint.poll(DummyNode.INSTANCE);
-
-            final SourceIndexLength current = node.getEncapsulatingSourceIndexLength();
-
-            if (current == null) {
-                return node;
-            }
-
-            if (environment.getParseEnvironment().isCoverageEnabled()) {
-                node.unsafeSetIsCoverageLine();
-                language.coverageManager.setLineHasCode(source, current.toSourceSection(source).getStartLine());
-            }
-            node.unsafeSetIsNewLine();
-        }
-
-        return node;
     }
 
     private static ArgumentsDescriptor getKeywordArgumentsDescriptor(RubyLanguage language, ParseNode argsNode) {
