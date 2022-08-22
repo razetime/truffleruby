@@ -1,11 +1,9 @@
-v = [0, [1, 2, 3], 42]
-loop do
+v = [-1, 0, [1, 2, 3], 4, 5, 42]
 case v
-in [e, *a, d] # pattern e=0
-  p [e, d]
+in [y, e, *a, c, d] # pattern e=0
+  p [y, e, c, d]
 else
   p :failed
-end
 end
 
 __END__
