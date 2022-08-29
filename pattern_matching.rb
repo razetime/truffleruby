@@ -1,6 +1,7 @@
-case 1
-in 1 | 0
-  :matched
+a=3
+case 0
+in ^a
+  p a
 else
   "not matched"
 end
