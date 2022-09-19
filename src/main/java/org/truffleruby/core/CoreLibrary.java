@@ -231,6 +231,7 @@ public class CoreLibrary {
 
     public final GlobalVariables globalVariables;
     public final BindingLocalVariablesObject interactiveBindingLocalVariablesObject;
+    public final RubyClass noMatchingPatternErrorClass;
 
     @CompilationFinal private RubyClass eagainWaitReadable;
     @CompilationFinal private RubyClass eagainWaitWritable;
@@ -329,6 +330,7 @@ public class CoreLibrary {
         unsupportedMessageErrorClass = defineClass(polyglotModule, standardErrorClass, "UnsupportedMessageError");
         polyglotForeignObjectClass = defineClass(polyglotModule, objectClass, "ForeignObject");
         polyglotForeignClasses = new RubyClass[ForeignClassNode.Trait.COMBINATIONS];
+        noMatchingPatternErrorClass = defineClass(standardErrorClass, "NoMatchingPatternError");
 
         // StandardError > RuntimeError
         runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
