@@ -6,11 +6,8 @@
 #   "not matched"
 # end
 
-Point = Struct.new(:x, :y)
-p [1,2].deconstruct
-p (Point[1,2]).deconstruct
-case Point[1,2]
-in [a,b]
-  p a
-  p b
+h = {a: 42}
+case h
+in { a: hpatternval }
+  p hpatternval
 end
